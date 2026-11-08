@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import { useAuth } from '../context/AuthContext'
 import { homeByRole } from '../lib/roles'
+import { friendlyMessage } from '../lib/errors'
 
 // Hanya tampil saat development (npm run dev). Data cocok dengan AdminSeeder.
 const demoAccounts = [
@@ -29,7 +30,7 @@ const metrics = [
     { icon: 'verified', color: 'text-emerald-300', title: 'Terkurasi', sub: 'Guru Pembina' },
 ]
 
-function Field({ id, label, hint, icon, ...props }) {
+function Field({ id, label, hint, icon, error, ...props }) {
     return (
         <div>
             <div className="flex justify-between items-center mb-1.5">
@@ -44,19 +45,65 @@ function Field({ id, label, hint, icon, ...props }) {
                 </span>
                 <input
                     id={id}
-                    required
-                    className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-on-surface placeholder:text-secondary/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all font-body-md text-body-md"
+                    aria-invalid={Boolean(error)}
+                    className={`w-full pl-11 pr-4 py-2.5 rounded-xl border bg-surface-container-lowest text-on-surface placeholder:text-secondary/60 focus:ring-2 transition-all font-body-md text-body-md ${error
+                            ? 'border-error focus:border-error focus:ring-error/20'
+                            : 'border-surface-container-highest focus:border-primary-container focus:ring-primary-container/20'
+                        }`}
                     {...props}
                 />
             </div>
+            {error && (
+                <p className="mt-1 text-[12px] text-error flex items-center gap-1">
+                    <Icon name="error" className="text-[14px]" />
+                    {error}
+                </p>
+            )}
         </div>
     )
+}
+// Aturan panjang NISN/NIP (ubah di sini jika perlu)
+const ID_MIN = 8
+const ID_MAX = 10
+
+// Membersihkan karakter terlarang saat mengetik
+const sanitize = {
+    identifier: (v) => v.replace(/\D/g, ''),               // hanya angka 0-9
+    name: (v) => v.replace(/[^\p{L}\s.'-]/gu, ''),         // huruf, spasi, titik, apostrof, strip
+    kelas: (v) => v,
+}
+
+// trim semua input + rapikan spasi ganda
+const tidy = (v) => v.trim().replace(/\s+/g, ' ')
+const normalize = (f) => ({
+    identifier: f.identifier.trim(),
+    name: tidy(f.name),
+    kelas: tidy(f.kelas),
+})
+
+function validate(f) {
+    const errs = {}
+
+    if (!f.identifier) errs.identifier = 'NISN/NIP wajib diisi.'
+    else if (!/^\d+$/.test(f.identifier)) errs.identifier = 'NISN/NIP hanya boleh berisi angka (0-9).'
+    else if (f.identifier.length < ID_MIN || f.identifier.length > ID_MAX)
+        errs.identifier = `NISN/NIP harus ${ID_MIN}-${ID_MAX} digit.`
+
+    if (!f.name) errs.name = 'Nama lengkap wajib diisi.'
+    else if (!/^[\p{L}\s.'-]+$/u.test(f.name)) errs.name = 'Nama hanya boleh berisi huruf.'
+    else if (f.name.replace(/[^\p{L}]/gu, '').length < 2) errs.name = 'Nama minimal 2 huruf.'
+
+    if (!f.kelas) errs.kelas = 'Kelas / jabatan wajib diisi.'
+
+    return errs
 }
 
 export default function LoginPage() {
     const { user, login } = useAuth()
     const navigate = useNavigate()
     const [form, setForm] = useState({ identifier: '', name: '', kelas: '' })
+    const [touched, setTouched] = useState({})
+    const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')
     const [demoNote, setDemoNote] = useState('')
     const [submitting, setSubmitting] = useState(false)
@@ -64,23 +111,32 @@ export default function LoginPage() {
 
     if (user) return <Navigate to={homeByRole[user.role]} replace />
 
-    const setField = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+    const errs = validate(normalize(form))
+    // pesan tampil setelah kolom ditinggalkan atau setelah tombol Masuk ditekan
+    const fieldError = (key) => (submitted || touched[key] ? errs[key] : undefined)
+
+    const setField = (key) => (e) => setForm({ ...form, [key]: sanitize[key](e.target.value) })
+
+    const blurField = (key) => () => {
+        setTouched((t) => ({ ...t, [key]: true }))
+        setForm((f) => ({ ...f, [key]: normalize(f)[key] })) // rapikan (trim) saat keluar dari kolom
+    }
 
     async function handleSubmit(e) {
         e.preventDefault()
+        setSubmitted(true)
         setError('')
+
+        const data = normalize(form)
+        setForm(data)
+        if (Object.keys(validate(data)).length > 0) return
+
         setSubmitting(true)
         try {
-            const u = await login(form)
+            const u = await login(data)
             navigate(homeByRole[u.role], { replace: true })
         } catch (err) {
-            const res = err.response
-            setError(
-                res?.data?.message ??
-                (res
-                    ? `Server membalas error ${res.status}. Cek terminal php artisan serve.`
-                    : 'Tidak dapat terhubung ke server. Pastikan php artisan serve berjalan.')
-            )
+            setError(friendlyMessage(err))
         } finally {
             setSubmitting(false)
         }
@@ -88,6 +144,8 @@ export default function LoginPage() {
 
     function fillDemo(acc) {
         setForm(acc.data)
+        setTouched({})
+        setSubmitted(false)
         setError('')
         setDemoNote(acc.title)
     }
@@ -172,13 +230,25 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    <form className="space-y-4" onSubmit={handleSubmit}>
-                        <Field id="identifier" label="NISN atau NIP" hint="Nomor Induk" icon="badge"
-                            placeholder="Contoh: 0072819281" value={form.identifier} onChange={setField('identifier')} />
-                        <Field id="name" label="Nama Lengkap" icon="person"
-                            placeholder="Sesuai data sekolah" value={form.name} onChange={setField('name')} />
-                        <Field id="kelas" label="Kelas / Jabatan" hint="Siswa: kelas • Guru: jabatan" icon="school"
-                            placeholder="Contoh: XI RPL" value={form.kelas} onChange={setField('kelas')} />
+                    <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+                        <Field
+                            id="identifier" label="NISN atau NIP" hint={`${ID_MIN}-${ID_MAX} digit angka`} icon="badge"
+                            inputMode="numeric" maxLength={ID_MAX} autoComplete="off" placeholder="Contoh: 0072819281"
+                            value={form.identifier} onChange={setField('identifier')} onBlur={blurField('identifier')}
+                            error={fieldError('identifier')}
+                        />
+                        <Field
+                            id="name" label="Nama Lengkap" hint="Minimal 2 huruf" icon="person"
+                            maxLength={100} autoComplete="off" placeholder="Sesuai data sekolah"
+                            value={form.name} onChange={setField('name')} onBlur={blurField('name')}
+                            error={fieldError('name')}
+                        />
+                        <Field
+                            id="kelas" label="Kelas / Jabatan" hint="Siswa: kelas • Guru: jabatan" icon="school"
+                            maxLength={50} autoComplete="off" placeholder="Contoh: XI RPL"
+                            value={form.kelas} onChange={setField('kelas')} onBlur={blurField('kelas')}
+                            error={fieldError('kelas')}
+                        />
 
                         <button
                             type="submit"

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Icon from './Icon'
 import CartDrawer from './CartDrawer'
 import { useAuth } from '../context/AuthContext'
@@ -28,6 +28,12 @@ const sidebarByRole = {
   ],
 }
 
+// Menu belanja untuk admin (siswa/guru sudah punya di top bar)
+const shopLinks = [
+  { to: '/katalog', label: 'Katalog Jajan', icon: 'storefront' },
+  { to: '/pesanan', label: 'Pesanan Saya', icon: 'shopping_bag' },
+]
+
 const roleInfo = {
   admin_pengurus: { badge: 'Admin Pengurus', subtitle: 'Portal Kas & Etalase Koperasi', ctaTo: '/admin/produk' },
   admin_pembina: { badge: 'Guru Pembina', subtitle: 'Pantauan Kurikulum PKK', ctaTo: '/pembina/produk' },
@@ -47,11 +53,13 @@ export default function AppLayout() {
   const { user, logout } = useAuth()
   const { count, openCart } = useCart()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [params] = useSearchParams()
 
   const isUser = user.role === 'user'
   const sidebar = sidebarByRole[user.role]
   const info = roleInfo[user.role]
+  const showSearch = isUser || pathname === '/katalog'
 
   const initials = user.name.split(' ').slice(0, 2).map((s) => s[0]).join('').toUpperCase()
   const roleLabel = isUser
@@ -88,32 +96,31 @@ export default function AppLayout() {
         </div>
 
         <div className="flex items-center gap-3">
-          {isUser && (
-            <>
-              <div className="relative hidden lg:block w-56">
-                <Icon name="search" className="absolute left-3 top-2.5 text-secondary text-[18px]" />
-                <input
-                  type="text"
-                  value={params.get('q') ?? ''}
-                  onChange={(e) => {
-                    const q = e.target.value
-                    navigate(q ? `/katalog?q=${encodeURIComponent(q)}` : '/katalog', { replace: true })
-                  }}
-                  placeholder="Cari risol, es teh..."
-                  className="w-full pl-9 pr-3 py-1.5 bg-surface-container-low rounded-xl text-body-sm font-body-sm border border-surface-container-highest focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                />
-              </div>
-              <button onClick={openCart} className="relative p-2 rounded-xl text-secondary hover:bg-surface-container-low transition-colors" title="Buka Keranjang Belanja">
-                <Icon name="shopping_cart" className="text-[24px]" />
-                {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
-                    {count}
-                  </span>
-                )}
-              </button>
-              <div className="h-8 w-[1px] bg-surface-container-highest hidden sm:block" />
-            </>
+          {showSearch && (
+            <div className="relative hidden lg:block w-56">
+              <Icon name="search" className="absolute left-3 top-2.5 text-secondary text-[18px]" />
+              <input
+                type="text"
+                value={params.get('q') ?? ''}
+                onChange={(e) => {
+                  const q = e.target.value
+                  navigate(q ? `/katalog?q=${encodeURIComponent(q)}` : '/katalog', { replace: true })
+                }}
+                placeholder="Cari risol, es teh..."
+                className="w-full pl-9 pr-3 py-1.5 bg-surface-container-low rounded-xl text-body-sm font-body-sm border border-surface-container-highest focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+              />
+            </div>
           )}
+
+          <button onClick={openCart} className="relative p-2 rounded-xl text-secondary hover:bg-surface-container-low transition-colors" title="Buka Keranjang Belanja">
+            <Icon name="shopping_cart" className="text-[24px]" />
+            {count > 0 && (
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                {count}
+              </span>
+            )}
+          </button>
+          <div className="h-8 w-[1px] bg-surface-container-highest hidden sm:block" />
 
           <div className="flex items-center gap-2 pl-1">
             <div className="w-9 h-9 rounded-full bg-primary-container/20 border border-primary/30 flex items-center justify-center text-primary font-bold text-label-md">
@@ -136,7 +143,7 @@ export default function AppLayout() {
       {/* ===== BODY ===== */}
       <div className="flex-1 flex max-w-[1440px] w-full mx-auto relative">
         {sidebar && (
-          <aside className="print:hidden hidden md:flex flex-col justify-between w-64 p-space-md bg-surface-container-lowest border-r border-surface-container-highest shrink-0 sticky top-[57px] h-[calc(100vh-57px)]">
+          <aside className="print:hidden hidden md:flex flex-col justify-between w-64 p-space-md bg-surface-container-lowest border-r border-surface-container-highest shrink-0 sticky top-[57px] h-[calc(100vh-57px)] overflow-y-auto">
             <div className="space-y-4">
               <div className="px-2 py-1">
                 <span className="text-[11px] font-bold tracking-wider uppercase text-primary bg-primary-fixed px-2 py-0.5 rounded-full">
@@ -162,9 +169,21 @@ export default function AppLayout() {
                   </NavLink>
                 ))}
               </nav>
+
+              <div className="pt-3 border-t border-surface-container-highest space-y-1">
+                <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-secondary">
+                  Belanja di Kantin
+                </span>
+                {shopLinks.map((item) => (
+                  <NavLink key={item.to} to={item.to} className={sideClass}>
+                    <Icon name={item.icon} className="text-[20px]" />
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
             </div>
 
-            <div className="pt-4 border-t border-surface-container-highest">
+            <div className="pt-4 mt-4 border-t border-surface-container-highest">
               <button onClick={handleLogout} className="w-full flex items-center gap-space-sm text-error hover:bg-error-container/40 font-label-md rounded-xl px-space-md py-space-sm text-left transition-colors">
                 <Icon name="logout" className="text-[20px]" />
                 <span>Keluar</span>
@@ -178,7 +197,7 @@ export default function AppLayout() {
         </main>
       </div>
 
-      {isUser && <CartDrawer />}
+      <CartDrawer />
     </div>
   )
 }

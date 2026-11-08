@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends Model
 {
+    public $timestamps = false;   // ← baris baru: tabel order_items tidak punya created_at/updated_at
+
     protected $fillable = [
         'order_id',
         'product_id',

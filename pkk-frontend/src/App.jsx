@@ -14,6 +14,7 @@ import DashboardPage from './pages/admin/DashboardPage'
 import VerifikasiPage from './pages/admin/VerifikasiPage'
 import AdminOrdersPage from './pages/admin/AdminOrdersPage'
 import PenjualanPage from './pages/admin/PenjualanPage'
+import AdminProductsPage from './pages/admin/AdminProductsPage'
 
 const P = (title) => <Placeholder title={title} />
 
@@ -25,12 +26,16 @@ export default function App() {
           <CartProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-
-              {/* USER */}
-              <Route element={<ProtectedRoute roles={['user']} />}>
+              {/* SEMUA PERAN: belanja di kantin */}
+              <Route element={<ProtectedRoute roles={['user', 'admin_pengurus', 'admin_pembina']} />}>
                 <Route element={<AppLayout />}>
                   <Route path="/katalog" element={<KatalogPage />} />
                   <Route path="/pesanan" element={<PesananPage />} />
+                </Route>
+              </Route>
+              {/* USER */}
+              <Route element={<ProtectedRoute roles={['user']} />}>
+                <Route element={<AppLayout />}>
                   <Route path="/ajukan" element={<AjukanPage />} />
                   <Route path="/ajukan/:id" element={<AjukanPage />} />
                   <Route path="/dagangan-saya" element={<DaganganSayaPage />} />
@@ -42,10 +47,10 @@ export default function App() {
                 <Route element={<AppLayout />}>
                   <Route path="/admin" element={<DashboardPage />} />
                   <Route path="/admin/verifikasi" element={<VerifikasiPage />} />
-                  <Route path="/admin/produk" element={P('Kelola Produk & Artikel')} />
+                  <Route path="/admin/produk" element={<AdminProductsPage />} />
                   <Route path="/admin/pesanan" element={<AdminOrdersPage />} />
                   <Route path="/admin/penjualan" element={<PenjualanPage />} />
-                  <Route path="/admin/pengguna" element={P('Arsip Pengguna')} />
+                  <Route path="/admin/pengguna" element={P('Arsip Pengguna')} />  
                 </Route>
               </Route>
 
