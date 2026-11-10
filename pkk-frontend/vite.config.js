@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     allowedHosts: true,
     host: true,
-    port: 5173,
+    port: 80,
     proxy: {
-      '/api': 'http://localhost:8000',
-      '/storage': 'http://localhost:8000',
+      '/api': 'https://pkk-marketplace.up.railway.app',
+      '/storage': 'https://pkk-marketplace.up.railway.app',
     },
   },
 })
