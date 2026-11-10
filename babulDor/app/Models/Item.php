@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Item extends Model
+{
+    protected $fillable = ['nama_barang', 'harga_asli', 'stok_awal', 'tanggal'];
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+}
