@@ -1,8 +1,7 @@
 {
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/:path*", "destination": "https://pkk-marketplace.up.railway.app/api/:path*" },
+    { "source": "/storage/:path*", "destination": "https://pkk-marketplace.up.railway.app/storage/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
