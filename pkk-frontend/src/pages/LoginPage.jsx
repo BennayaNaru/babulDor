@@ -269,7 +269,7 @@ export default function LoginPage() {
                         </button>
                     </form>
 
-                    {import.meta.env.DEV && (
+                    {(import.meta.env.DEV || import.meta.env.VITE_SHOW_DEMO === 'true') && (
                         <div className="mt-6 pt-5 border-t border-surface-container-highest">
                             <div className="flex items-center justify-between mb-2.5">
                                 <span className="font-label-sm text-label-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-1.5">

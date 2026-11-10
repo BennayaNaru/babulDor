@@ -20,7 +20,7 @@ class AdminSeeder extends Seeder
         ]);
         User::updateOrCreate(['identifier' => '0000000003'], [
             'name' => 'Pengurus Demo',
-            'user_type' => 'siswa',
+            'user_type' => 'siswa',     
             'class_or_position' => 'XI AK 1',
             'role' => 'admin_pengurus',
             'is_active' => true,
