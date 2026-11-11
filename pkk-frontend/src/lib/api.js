@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL:  https://pkk-marketplace.up.railway.app/api,
+  baseURL:  'https://pkk-marketplace.up.railway.app/api',
   headers: { Accept: 'application/json' },
 })
 
