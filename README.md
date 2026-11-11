@@ -1,4 +1,4 @@
-# PKK Marketplace – Kantin Digital PKK Sekolah
+# PKK Marketplace – PKK Sekolah
 
 Aplikasi web untuk mengelola kantin/marketplace PKK sekolah. Siswa dan guru bisa melihat katalog, memesan, dan menitipkan dagangan. Pengurus PKK memverifikasi dagangan, mengelola pesanan dan stok, serta merekap penjualan. Pembina memantau rekap penjualan dalam mode baca saja. Data yang ada di aplikasi ini adalah **data demo untuk pengembangan**.
 
