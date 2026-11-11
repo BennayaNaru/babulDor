@@ -5,7 +5,7 @@ Aplikasi web untuk mengelola kantin/marketplace PKK sekolah. Siswa dan guru bisa
 ## Tech Stack
 
 - **Frontend:** React (Vite), React Router, Tailwind CSS
-- **Backend:** Laravel 13 (PHP 8.3+), REST API dengan Laravel Sanctum
+- **Backend:** Laravel 13 (PHP 8.4), REST API dengan Laravel Sanctum
 - **Database:** MySQL
 
 ## Prasyarat
